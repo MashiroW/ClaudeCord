@@ -1,0 +1,7 @@
+# Secrets et donnees locales
+config.json
+state.json
+attachments/
+sans-dossier/
+node_modules/
+*.log

@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Guide — Bot Discord pour Claude Code</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  :root { --ink:#1d1d1f; --muted:#5f6368; --accent:#c96442; --soft:#f6f1ee; --line:#e3ddd8; --code:#f4f4f5; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); font-size: 11pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 26pt; margin: 0 0 4mm; line-height: 1.15; }
+  h2 { font-size: 16pt; color: var(--accent); border-bottom: 2px solid var(--line); padding-bottom: 2mm; margin: 9mm 0 4mm; break-after: avoid; }
+  h3 { font-size: 12.5pt; margin: 6mm 0 2mm; break-after: avoid; }
+  p, li { margin: 0 0 2mm; }
+  ul, ol { padding-left: 6mm; margin: 0 0 3mm; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; background: var(--code); padding: 0 1.2mm; border-radius: 1mm; font-size: 9.5pt; }
+  pre { font-family: Consolas, "Cascadia Mono", monospace; background: var(--code); border: 1px solid var(--line); border-radius: 2mm; padding: 3mm 4mm; font-size: 9pt; line-height: 1.4; white-space: pre-wrap; break-inside: avoid; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 0 0 4mm; font-size: 10pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 1.6mm 2.4mm; text-align: left; vertical-align: top; }
+  th { background: var(--soft); }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; break-after: page; }
+  .cover .sub { font-size: 13pt; color: var(--muted); margin-bottom: 10mm; }
+  .cover .tag { display: inline-block; background: var(--accent); color: #fff; padding: 1mm 3mm; border-radius: 1.5mm; font-size: 9pt; letter-spacing: .5px; margin-bottom: 6mm; width: max-content; }
+  .toc { background: var(--soft); border-radius: 2mm; padding: 4mm 6mm; }
+  .toc ol { margin: 0; }
+  .box { border-left: 4px solid var(--accent); background: var(--soft); padding: 3mm 4mm; border-radius: 0 2mm 2mm 0; margin: 0 0 4mm; break-inside: avoid; }
+  .warn { border-left-color: #b3261e; background: #fbeeed; }
+  .ok { border-left-color: #2e7d32; background: #edf6ee; }
+  .box p:last-child { margin: 0; }
+  .muted { color: var(--muted); font-size: 9.5pt; }
+  .page-break { break-before: page; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <span class="tag">GUIDE PERSO</span>
+  <h1>Piloter Claude Code<br>depuis Discord</h1>
+  <p class="sub">Comment le projet <code>claude-discord</code> est construit, comment le refaire de zéro, et comment partager ton serveur avec d'autres personnes.</p>
+  <div class="toc">
+    <strong>Sommaire</strong>
+    <ol>
+      <li>Ce que fait le projet</li>
+      <li>Ce qu'il te faut</li>
+      <li>Comment c'est construit (les pièces)</li>
+      <li>Le refaire étape par étape</li>
+      <li>Comment ça marche à l'intérieur</li>
+      <li>Les commandes</li>
+      <li>Partager le serveur avec d'autres</li>
+      <li>Sécurité : les règles à garder</li>
+      <li>Dépannage</li>
+    </ol>
+  </div>
+  <p class="muted" style="margin-top:10mm">Dossier du projet : <code>C:\Myfiles\Logiciels\claude-discord</code> · Octobre 2026</p>
+</section>
+
+<h2>1. Ce que fait le projet</h2>
+<p>Tu écris à Claude dans Discord (au téléphone, à la voix, où tu veux), et c'est <strong>Claude Code sur ton PC</strong> qui fait le travail : il lit et modifie tes fichiers, lance des commandes, puis te répond dans Discord.</p>
+<p>Ton serveur Discord devient une copie de la barre latérale de l'app Claude :</p>
+<pre>📁 Projet Remaster Silver          ← catégorie = un projet (un dossier du PC)
+   # game-decompilation            ← salon = une conversation avec Claude
+   # wsl-disk-space-analysis
+📁 Sans dossier
+   # apex-movement-mechanics
+📦 Archives
+# accueil                          ← l'aide et les commandes du bot</pre>
+<p>Dans chaque salon, le déroulé est toujours le même :</p>
+<pre>Toi : ajoute un bouton pause
+Bot : ⏳ Patience, je traite ta requête…
+Bot : (la réponse, coupée en messages de 2000 caractères max)
+Bot : ✅ Réponse terminée (42 s) — tu peux envoyer ta prochaine question.
+      🪙 40,3 k lus (dont 32 k en cache) · 850 écrits
+      ⏱️ 5 h : reste 81 % · 📅 semaine : reste 39 %</pre>
+<p>Le bot reprend aussi les conversations que tu as eues dans l'app Claude (import et synchro automatique toutes les 10 minutes) et renomme les salons comme l'app.</p>
+
+<h2>2. Ce qu'il te faut</h2>
+<ul>
+  <li><strong>Un PC Windows allumé</strong> : c'est lui qui travaille. S'il dort, le bot ne répond plus.</li>
+  <li><strong>Claude Code</strong> installé et connecté à ton abonnement Claude (la commande <code>claude</code> doit marcher dans un terminal).</li>
+  <li><strong>Node.js 24 ou plus</strong> : le bot n'a besoin d'aucune bibliothèque, il utilise le WebSocket et le <code>fetch</code> intégrés à Node.</li>
+  <li><strong>Un compte Discord</strong> et un serveur à toi.</li>
+</ul>
+<div class="box"><p>Pas besoin de <code>npm install</code> : trois fichiers <code>.mjs</code> (environ 1000 lignes en tout) suffisent.</p></div>
+
+<h2>3. Comment c'est construit</h2>
+<table>
+  <tr><th style="width:28%">Fichier</th><th>Rôle</th></tr>
+  <tr><td><code>bridge.mjs</code></td><td>Le bot lui-même (~790 lignes). Il se connecte à Discord, reçoit tes messages, lance Claude, renvoie la réponse, gère les catégories et salons, les commandes <code>!…</code> et la synchro avec l'app.</td></tr>
+  <tr><td><code>sessions.mjs</code></td><td>Lit les conversations de l'app Claude stockées sur le PC (<code>~\.claude\projects\…\*.jsonl</code>) : titre, dossier, derniers échanges.</td></tr>
+  <tr><td><code>split.mjs</code></td><td>Découpe une longue réponse en morceaux de 2000 caractères max, sans casser les blocs de code.</td></tr>
+  <tr><td><code>config.json</code></td><td>Tes réglages et le <strong>token secret</strong> du bot. Ne le partage jamais.</td></tr>
+  <tr><td><code>config.example.json</code></td><td>Le modèle de config, sans secret.</td></tr>
+  <tr><td><code>state.json</code></td><td>La mémoire du bot : quel salon correspond à quelle conversation et à quel dossier. Créé tout seul.</td></tr>
+  <tr><td><code>start.bat</code></td><td>Lance le bot et le relance après 5 s s'il s'arrête.</td></tr>
+  <tr><td><code>attachments\</code></td><td>Les fichiers et captures que tu envoies dans Discord, pour que Claude puisse les lire.</td></tr>
+</table>
+
+<h2 class="page-break">4. Le refaire étape par étape</h2>
+
+<h3>Étape 1 — Créer ton serveur</h3>
+<p>Dans Discord : <strong>+</strong> → <strong>Créer le mien</strong> → <strong>Pour moi et mes amis</strong>.</p>
+
+<h3>Étape 2 — Créer le bot</h3>
+<p>Un webhook ne sait qu'<em>envoyer</em> des messages, pas les lire. Il faut donc un vrai bot (gratuit).</p>
+<ol>
+  <li>Va sur <code>discord.com/developers/applications</code> → <strong>New Application</strong> → donne-lui un nom (ex. « MyClaude »).</li>
+  <li>Onglet <strong>Bot</strong> :
+    <ul>
+      <li><strong>Reset Token</strong> → copie le token. C'est le mot de passe du bot.</li>
+      <li>Active <strong>Message Content Intent</strong>. Sans ça, le bot voit qu'il y a un message mais pas son texte.</li>
+      <li>Décoche <strong>Public Bot</strong> : personne d'autre ne pourra l'ajouter à son serveur.</li>
+    </ul>
+  </li>
+  <li>Onglet <strong>Installation</strong> : mets le lien d'installation sur <strong>None</strong>. Sinon Discord refuse de passer le bot en privé.</li>
+  <li>Onglet <strong>OAuth2 → URL Generator</strong> : coche le scope <code>bot</code>, puis la permission <strong>Administrator</strong>. Ouvre l'URL générée et choisis ton serveur.</li>
+</ol>
+<div class="box warn"><p>Si Discord affiche <em>« Integration requires code grant »</em>, va dans l'onglet <strong>Bot</strong> et désactive <strong>Requires OAuth2 Code Grant</strong>.</p></div>
+
+<h3>Étape 3 — Récupérer les identifiants</h3>
+<p><strong>Paramètres utilisateur → Avancés → Mode développeur</strong> (activer). Ensuite :</p>
+<ul>
+  <li>clic droit sur l'icône du serveur → <strong>Copier l'identifiant du serveur</strong> → c'est le <code>guildId</code> ;</li>
+  <li>clic droit sur ton pseudo → <strong>Copier l'identifiant de l'utilisateur</strong> → c'est le <code>ownerId</code>.</li>
+</ul>
+
+<h3>Étape 4 — Configurer</h3>
+<p>Copie <code>config.example.json</code> en <code>config.json</code> et remplis-le :</p>
+<table>
+  <tr><th style="width:30%">Clé</th><th>Rôle</th></tr>
+  <tr><td><code>discordToken</code></td><td>le token du bot (secret)</td></tr>
+  <tr><td><code>guildId</code></td><td>l'ID de ton serveur : le bot ignore tous les autres</td></tr>
+  <tr><td><code>ownerId</code></td><td>ton ID : <strong>seuls tes messages</strong> sont envoyés à Claude</td></tr>
+  <tr><td><code>claudePath</code></td><td>chemin de <code>claude.exe</code></td></tr>
+  <tr><td><code>model</code> / <code>effort</code></td><td><code>claude-opus-5-5</code> / <code>medium</code> par défaut</td></tr>
+  <tr><td><code>permissionMode</code></td><td><code>auto</code> conseillé : Claude fait seul ce qui est sûr et refuse ce qui est risqué</td></tr>
+  <tr><td><code>maxParallel</code></td><td>conversations qui peuvent travailler en même temps (3)</td></tr>
+  <tr><td><code>timeoutMinutes</code></td><td>durée max d'une requête (60)</td></tr>
+  <tr><td><code>showUsage</code> / <code>showCost</code></td><td>affiche les tokens et le forfait restant / le coût</td></tr>
+  <tr><td><code>syncMinutes</code>, <code>syncDays</code>, <code>syncMaxNew</code>, <code>importHistory</code></td><td>réglages de la synchro avec l'app (toutes les 10 min, sur 7 jours, 15 nouvelles conversations max, 5 échanges repris)</td></tr>
+  <tr><td><code>appendSystemPrompt</code></td><td>consignes ajoutées à Claude : réponses courtes, pas de tableaux, dictée vocale…</td></tr>
+</table>
+
+<h3>Étape 5 — Lancer</h3>
+<p>Double-clic sur <code>start.bat</code>. La fenêtre doit rester ouverte. Au premier lancement, le bot crée le salon <strong>#accueil</strong>.</p>
+<p>Pour qu'il démarre avec Windows : <code>Win + R</code> → <code>shell:startup</code> → mets-y un raccourci vers <code>start.bat</code>.</p>
+
+<h3>Étape 6 — Premier test</h3>
+<ol>
+  <li>Dans #accueil : <code>!projet C:\chemin\de\ton\projet</code> → une catégorie et un salon <code>nouvelle-conversation</code> apparaissent.</li>
+  <li>Écris une question dans ce salon : tu dois voir ⏳, la réponse, puis ✅.</li>
+  <li><code>!importer</code> pour récupérer tes conversations de l'app.</li>
+</ol>
+
+<h2 class="page-break">5. Comment ça marche à l'intérieur</h2>
+
+<h3>La connexion à Discord</h3>
+<p>Le bot ouvre une connexion permanente (la <em>Gateway</em>, un WebSocket) avec Discord. Discord y pousse chaque nouveau message en temps réel. Toutes les ~40 s, le bot envoie un « battement de cœur » pour dire qu'il est vivant. Si la connexion tombe, il se reconnecte et reprend là où il en était.</p>
+<p>Pour <em>envoyer</em> des messages, créer ou renommer des salons, il utilise l'API web de Discord (des requêtes HTTP classiques). Quand Discord dit « trop vite » (erreur 429), le bot attend le délai demandé puis réessaie.</p>
+
+<h3>Le trajet d'un message</h3>
+<ol>
+  <li>Discord pousse ton message au bot.</li>
+  <li>Le bot vérifie que c'est <strong>ton serveur</strong> et <strong>toi</strong>. Sinon il l'ignore.</li>
+  <li>Il marque le salon « occupé » et envoie ⏳ Patience.</li>
+  <li>Il lance Claude Code en arrière-plan dans le dossier du projet :
+<pre>claude -p --resume &lt;id-conversation&gt; --model claude-opus-5-5 --effort medium
+       --permission-mode auto --output-format stream-json --verbose</pre>
+     Ta question passe par l'entrée standard. <code>--resume</code> fait que Claude garde le fil de la conversation.</li>
+  <li>Claude travaille et écrit sa progression ligne par ligne (format JSON). La dernière ligne contient la réponse, l'ID de la conversation et les tokens. D'autres lignes donnent le forfait restant (fenêtres de 5 h et de la semaine).</li>
+  <li><code>split.mjs</code> découpe la réponse en messages de 2000 caractères max. Si un bloc de code est coupé, il le referme et le rouvre dans le message suivant.</li>
+  <li>Le bot envoie les morceaux, puis ✅ et les lignes de conso en petit.</li>
+  <li>Après la première réponse, un petit appel à Haiku génère un titre court et renomme le salon.</li>
+</ol>
+
+<h3>La synchro avec l'app Claude</h3>
+<p>L'app Claude enregistre chaque conversation dans un fichier <code>.jsonl</code> dans <code>C:\Users\&lt;toi&gt;\.claude\projects\</code>. Certains fichiers dépassent 100 Mo, donc le bot n'en lit que le début (pour le dossier) et la fin (titre, derniers échanges).</p>
+<p>Toutes les 10 minutes, ou avec <code>!synchro</code>, il :</p>
+<ul>
+  <li>recopie dans Discord les échanges faits dans l'app depuis la dernière fois ;</li>
+  <li>importe les nouvelles conversations qui ont un titre dans l'app ;</li>
+  <li>renomme les salons dont le titre a changé, et les déplace si la conversation a changé de dossier.</li>
+</ul>
+<p>Il ignore ce qui vient de lui-même (les conversations lancées en <code>claude -p</code>, déjà dans Discord), les interruptions et les échanges encore en cours.</p>
+
+<h3>Redémarrage</h3>
+<p><code>!redemarrer</code> arrête le bot proprement et <code>start.bat</code> le relance. La commande est refusée si une requête est en cours, pour ne pas couper une réponse.</p>
+
+<h2>6. Les commandes</h2>
+<table>
+  <tr><th style="width:32%">Commande</th><th>Effet</th></tr>
+  <tr><td><code>!projet C:\dossier</code></td><td>crée la catégorie du projet et un premier salon</td></tr>
+  <tr><td><code>!projets</code></td><td>liste les projets et leurs dossiers</td></tr>
+  <tr><td><code>!importer</code> puis <code>!importer 1 3</code> ou <code>!importer tout</code></td><td>recrée tes conversations de l'app en salons</td></tr>
+  <tr><td><code>!synchro</code></td><td>met tout à jour depuis l'app tout de suite</td></tr>
+  <tr><td><code>!nouveau [titre]</code></td><td>nouvelle conversation dans le même projet</td></tr>
+  <tr><td><code>!stop</code></td><td>annule la requête en cours dans ce salon</td></tr>
+  <tr><td><code>!status</code></td><td>libre ou occupé, dossier, conversation</td></tr>
+  <tr><td><code>!conso</code></td><td>forfait restant (5 h et semaine)</td></tr>
+  <tr><td><code>!archiver</code></td><td>range le salon dans 📦 Archives</td></tr>
+  <tr><td><code>!redemarrer</code></td><td>relance le bot</td></tr>
+  <tr><td><code>!aide</code></td><td>rappelle la liste</td></tr>
+</table>
+<p>Tu peux aussi créer un salon à la main dans une catégorie de projet : il devient une nouvelle conversation. Une pièce jointe (capture, fichier) est téléchargée sur le PC et Claude la lit.</p>
+
+<h2 class="page-break">7. Partager le serveur avec d'autres</h2>
+<p>Tu peux inviter des amis pour qu'ils <strong>lisent</strong> tes conversations avec Claude et en discutent avec toi. Le bot, lui, continue de n'obéir qu'à toi. Leurs messages sont ignorés, c'est voulu (voir la partie 8).</p>
+
+<h3>Inviter quelqu'un</h3>
+<ol>
+  <li>Clic droit sur l'icône du serveur → <strong>Inviter des gens</strong>.</li>
+  <li><strong>Modifier le lien d'invitation</strong> : choisis une expiration (ex. 1 jour) et un nombre d'utilisations (ex. 1). Un lien qui traîne pourrait laisser entrer n'importe qui.</li>
+  <li>Envoie le lien à la personne.</li>
+</ol>
+
+<h3>Choisir ce qu'ils voient : un rôle « Invité »</h3>
+<p>Par défaut, tout membre voit tous les salons. Pour contrôler ça proprement :</p>
+<ol>
+  <li><strong>Paramètres du serveur → Rôles → Créer un rôle</strong>, nomme-le « Invité ».</li>
+  <li>Donne ce rôle à tes amis (clic droit sur leur pseudo → Rôles).</li>
+  <li>Sur chaque <strong>catégorie</strong> privée (clic droit → Modifier la catégorie → Permissions) :
+    <ul>
+      <li>pour <code>@everyone</code> : <strong>Voir les salons ✗</strong> ;</li>
+      <li>et si tu veux la montrer à tes invités : ajoute le rôle « Invité » avec <strong>Voir les salons ✓</strong>.</li>
+    </ul>
+  </li>
+  <li>Les salons d'une catégorie suivent ses permissions (« synchronisés »). Les nouveaux salons créés par le bot dans cette catégorie sont donc couverts automatiquement.</li>
+</ol>
+<div class="box"><p><strong>Plus simple :</strong> crée une catégorie « Partagé » où tu ranges les conversations à montrer. Seule cette catégorie est visible du rôle « Invité ». Tout le reste reste caché.</p></div>
+
+<h3>Lecture seule ou discussion ?</h3>
+<ul>
+  <li><strong>Lecture seule :</strong> sur la catégorie, rôle « Invité » → <strong>Envoyer des messages ✗</strong>. Ils lisent sans pouvoir écrire.</li>
+  <li><strong>Pour discuter entre vous :</strong> crée un salon <code>#discussion</code> hors des catégories de projets. Le bot n'y crée rien, et comme il ne t'y répond pas, ça reste un salon de discussion normal.</li>
+</ul>
+<div class="box warn"><p><strong>Attention :</strong> si tu écris toi-même un message dans un salon de projet, le bot l'envoie à Claude. Pour parler à tes amis, utilise <code>#discussion</code>.</p></div>
+
+<h3>Ce que tes invités ne doivent jamais avoir</h3>
+<ul>
+  <li><strong>Administrateur</strong> ou <strong>Gérer les salons</strong> : ils pourraient supprimer ou déplacer des salons et casser l'organisation du bot.</li>
+  <li><strong>Gérer le serveur</strong> ou <strong>Gérer les rôles</strong>.</li>
+</ul>
+
+<h3>Et s'ils veulent leur propre Claude dans Discord ?</h3>
+<p>Le plus propre : chacun installe ce projet chez lui, avec <strong>son</strong> PC, <strong>son</strong> abonnement Claude et <strong>son</strong> bot. Les abonnements Claude sont personnels, donc ne fais pas tourner ton bot pour d'autres. Vous pouvez quand même être sur le même serveur Discord : chaque bot a un <code>ownerId</code> différent et ne répond qu'à son propriétaire. Donnez-leur des catégories séparées pour ne pas mélanger les conversations.</p>
+
+<h2>8. Sécurité : les règles à garder</h2>
+<div class="box warn">
+<p>Ton bot donne à Claude un accès réel à ton PC : fichiers, commandes, internet. Quiconque pourrait lui parler pourrait agir sur ton PC.</p>
+</div>
+<ul>
+  <li><strong>Garde <code>ownerId</code> = ton ID uniquement.</strong> Ne l'élargis jamais à d'autres personnes.</li>
+  <li><strong>Le token du bot est un mot de passe.</strong> Ne le colle nulle part : ni dans Discord, ni dans une capture, ni dans un dépôt Git. S'il fuit : Developer Portal → Bot → <strong>Reset Token</strong>, puis mets le nouveau dans <code>config.json</code>.</li>
+  <li><strong>Bot privé</strong> : « Public Bot » décoché, pour que personne ne puisse l'inviter ailleurs.</li>
+  <li><strong>Ce que tes invités voient, ils le voient en entier</strong> : le code, les chemins de fichiers, parfois des infos perso. Ne partage que les catégories sans données sensibles.</li>
+  <li>Garde <code>permissionMode</code> sur <code>auto</code>. <code>bypassPermissions</code> laisse Claude tout faire sans filet.</li>
+  <li>Active l'<strong>authentification à deux facteurs</strong> sur ton compte Discord : si on te le vole, on peut parler au bot en se faisant passer pour toi.</li>
+</ul>
+
+<h2>9. Dépannage</h2>
+<table>
+  <tr><th style="width:38%">Problème</th><th>Solution</th></tr>
+  <tr><td>Le bot est hors ligne</td><td>Le PC dort ou <code>start.bat</code> est fermé. Relance-le.</td></tr>
+  <tr><td>Erreur 4014 au démarrage</td><td>Message Content Intent n'est pas activé dans le portail.</td></tr>
+  <tr><td>Erreur 4004</td><td>Token invalide : régénère-le et mets-le à jour.</td></tr>
+  <tr><td>« Integration requires code grant »</td><td>Onglet Bot → décoche Requires OAuth2 Code Grant.</td></tr>
+  <tr><td>Le bot ne répond pas à un ami</td><td>Normal : il ne répond qu'à <code>ownerId</code>.</td></tr>
+  <tr><td>« Attends le ✅ »</td><td>Une requête tourne déjà dans ce salon. Attends ou fais <code>!stop</code>.</td></tr>
+  <tr><td>Une conversation de l'app n'apparaît pas</td><td><code>!synchro</code>. Seules celles qui ont un titre dans l'app sont importées automatiquement. Sinon <code>!importer</code>.</td></tr>
+  <tr><td>Claude dit qu'une action est bloquée</td><td>Le mode <code>auto</code> a refusé une action risquée. Fais-la sur le PC.</td></tr>
+  <tr><td>Tu as modifié le code du bot</td><td><code>!redemarrer</code>.</td></tr>
+</table>
+<p class="muted">Pense aussi à ne pas écrire dans la même conversation depuis l'app et depuis Discord en même temps. Les conversations créées depuis Discord se reprennent sur le PC avec <code>claude --resume</code> dans le dossier du projet.</p>
+
+</body>
+</html>
