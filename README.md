@@ -1,7 +1,8 @@
 ![ClaudeCord](./res/banner.png?raw=true "ClaudeCord")
 
 # ClaudeCord - Claude Code, driven from Discord
-[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/MashiroW)
+
+[![Version](https://img.shields.io/badge/version-1.0-2ea44f?style=for-the-badge)](https://github.com/MashiroW/ClaudeCord) [![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0wIDBoMTF2MTFIMHpNMTMgMGgxMXYxMUgxM3pNMCAxM2gxMXYxMUgwek0xMyAxM2gxMXYxMUgxM3oiLz48L3N2Zz4=&logoColor=white)](#) [![Stars](https://img.shields.io/github/stars/MashiroW/ClaudeCord?style=for-the-badge&logo=github&color=e3b341)](https://github.com/MashiroW/ClaudeCord/stargazers) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/MashiroW)
 
 *A small Discord bot that lets you talk to **Claude Code running on your own PC** from any Discord client: your phone, a laptop, voice dictation. Your private server becomes a copy of the Claude app's sidebar, with one category per project and one channel per conversation.*
 
