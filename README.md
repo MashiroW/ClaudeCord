@@ -1,6 +1,8 @@
 ![ClaudeCord](./res/banner.png?raw=true "ClaudeCord")
 
 # ClaudeCord - Claude Code, driven from Discord
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/MashiroW)
+
 *A small Discord bot that lets you talk to **Claude Code running on your own PC** from any Discord client: your phone, a laptop, voice dictation. Your private server becomes a copy of the Claude app's sidebar, with one category per project and one channel per conversation.*
 
 ---
@@ -184,3 +186,9 @@ The bot gives Claude real access to your PC: files, commands, network. Anyone wh
 - Don't write in **the same** conversation from the app and from Discord at the same time.
 - Conversations started from Discord don't show up in the app's sidebar on their own. Resume them on the PC with `claude --resume` in the project folder.
 - It uses your Claude plan, exactly like Claude Code in a terminal.
+
+---
+
+## ❤️ Support
+
+If ClaudeCord saves you time, you can support my work on [GitHub Sponsors](https://github.com/sponsors/MashiroW).
