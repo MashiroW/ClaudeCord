@@ -5,3 +5,7 @@ attachments/
 sans-dossier/
 node_modules/
 *.log
+
+# Guide perso (contient des chemins et noms de projets locaux)
+guide/
+Guide-bot-Discord-Claude.pdf

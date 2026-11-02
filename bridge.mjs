@@ -23,7 +23,7 @@ if (!existsSync(CONFIG_PATH)) {
 }
 const config = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
 for (const key of ['discordToken', 'guildId', 'ownerId']) {
-  if (!config[key] || String(config[key]).includes('COLLE')) {
+  if (!config[key] || /COLLE|PASTE/.test(String(config[key]))) {
     console.error(`config.json : "${key}" n'est pas rempli.`);
     process.exit(1);
   }
@@ -376,7 +376,7 @@ async function cmdImport(msg, arg) {
   }
 
   if (!lastImportList.length) return send(msg.channel_id, 'Fais d\'abord `!importer` pour voir la liste.', msg.id);
-  const picks = arg.trim().toLowerCase() === 'tout'
+  const picks = arg.trim().toLowerCase() === 'tout' || arg.trim().toLowerCase() === 'all'
     ? lastImportList
     : [...new Set(arg.split(/[\s,]+/).map(Number))].filter((n) => n >= 1 && n <= lastImportList.length).map((n) => lastImportList[n - 1]);
   if (!picks.length) return send(msg.channel_id, 'Numéros invalides.', msg.id);
@@ -532,12 +532,16 @@ async function handleCommand(msg, text) {
   const arg = rest.join(' ').trim();
   const here = msg.channel_id;
   switch (cmd.toLowerCase()) {
-    case '!projet': return cmdProject(msg, arg);
-    case '!projets': return cmdProjects(msg);
-    case '!importer': return cmdImport(msg, arg);
+    case '!projet':
+    case '!project': return cmdProject(msg, arg);
+    case '!projets':
+    case '!projects': return cmdProjects(msg);
+    case '!importer':
+    case '!import': return cmdImport(msg, arg);
     case '!nouveau':
     case '!new': return cmdNew(msg, arg);
-    case '!archiver': return cmdArchive(msg);
+    case '!archiver':
+    case '!archive': return cmdArchive(msg);
     case '!stop': {
       const run = runs.get(here);
       if (!run) return send(here, 'Rien en cours ici.', msg.id);
