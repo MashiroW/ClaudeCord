@@ -2,7 +2,7 @@
 
 # ClaudeCord - Claude Code, driven from Discord
 
-[![Version](https://img.shields.io/badge/version-1.0-2ea44f?style=for-the-badge)](https://github.com/MashiroW/ClaudeCord) [![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0wIDBoMTF2MTFIMHpNMTMgMGgxMXYxMUgxM3pNMCAxM2gxMXYxMUgwek0xMyAxM2gxMXYxMUgxM3oiLz48L3N2Zz4=&logoColor=white)](#) [![Stars](https://img.shields.io/github/stars/MashiroW/ClaudeCord?style=for-the-badge&logo=github&color=e3b341)](https://github.com/MashiroW/ClaudeCord/stargazers) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/MashiroW)
+[![Version](https://img.shields.io/badge/version-1.0-2ea44f?style=for-the-badge)](https://github.com/MashiroW/ClaudeCord) [![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0wIDBoMTF2MTFIMHpNMTMgMGgxMXYxMUgxM3pNMCAxM2gxMXYxMUgwek0xMyAxM2gxMXYxMUgxM3oiLz48L3N2Zz4=&logoColor=white)](#) [![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](#) [![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](#) [![Stars](https://img.shields.io/github/stars/MashiroW/ClaudeCord?style=for-the-badge&logo=github&color=e3b341)](https://github.com/MashiroW/ClaudeCord/stargazers) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/MashiroW)
 
 *A small Discord bot that lets you talk to **Claude Code running on your own PC** from any Discord client: your phone, a laptop, voice dictation. Your private server becomes a copy of the Claude app's sidebar, with one category per project and one channel per conversation.*
 
@@ -35,7 +35,7 @@ Claude : ✅ Réponse terminée (42 s) — tu peux envoyer ta prochaine question
 
 | | |
 |---|---|
-| Platform | Windows (the PC that runs Claude Code) |
+| Platform | Windows, Linux or macOS: the computer that runs Claude Code. The helper scripts (`start.bat`, autostart) are for Windows. |
 | Requires | [Node.js](https://nodejs.org) 24+ and [Claude Code](https://claude.com/claude-code) signed in to your Claude plan |
 | Dependencies | none: three `.mjs` files, no `npm install` |
 | Who can use it | **only you**: the bot ignores every other user and every other server |
@@ -100,6 +100,8 @@ Copy `config.example.json` to `config.json` and fill it in:
 
 ### 5. Run
 Double-click **`start.bat`**. On first launch, the bot creates an **#accueil** channel with the help.
+
+On Linux or macOS, run `node bridge.mjs` from the project folder instead. To keep it running in the background, use your usual tool (a `systemd` user service, `tmux`, `pm2`…).
 
 ---
 
