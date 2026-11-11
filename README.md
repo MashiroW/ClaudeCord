@@ -195,3 +195,11 @@ The bot gives Claude real access to your PC: files, commands, network. Anyone wh
 ## ❤️ Support
 
 If ClaudeCord saves you time, you can support my work on [GitHub Sponsors](https://github.com/sponsors/MashiroW).
+
+## ⚖️ License
+
+Copyright (C) 2026 MashiroW
+
+ClaudeCord is free software, released under the [GNU General Public License v3.0](LICENSE). You may use, modify and redistribute it, in whole or in part (snippets included), as long as anything you distribute that is based on it is also released under the GPL-3.0 with its source code, and keeps this copyright notice. Third-party assets and libraries included in or used by this project remain under their own licenses.
+
+**Commercial or closed-source use:** if you want to use this project, or any part of it, in a proprietary or closed-source product without the GPL obligations, you need a separate commercial license. Contact me on Discord to get one: https://discord.gg/EN2Kjmr4hN
