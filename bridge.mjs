@@ -4,7 +4,7 @@
 // le salon (découpée si besoin). Aucune dépendance : Node 22+.
 
 import { spawn, execFile } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, dirname, basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { splitMessage } from './split.mjs';
@@ -87,6 +87,75 @@ function send(channelId, content, replyTo) {
 
 async function sendLong(channelId, text) {
   for (const chunk of splitMessage(text)) await send(channelId, chunk);
+}
+
+// ---------- Fichiers envoyés par Claude ----------
+// Claude écrit [[fichier: C:\chemin\image.png]] dans sa réponse : le tag est
+// retiré du texte et le fichier est joint dans le salon.
+
+const FILE_TAG = /\[\[\s*fichier\s*:\s*([^\]\n]+?)\s*\]\]/gi;
+const MAX_FILES = 10; // limite Discord par message
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // limite Discord sans boost
+const FILE_HINT =
+  'Tu réponds via un pont Discord. Pour envoyer un fichier du PC à l\'utilisateur (image, capture, document), ' +
+  'écris sur sa propre ligne [[fichier: C:\\chemin\\absolu\\du\\fichier]] : le pont retire ce tag et joint le fichier ' +
+  `à ton message. Un tag par fichier, ${MAX_FILES} maximum, 10 Mo maximum chacun.`;
+
+function extractFiles(text, cwd) {
+  const paths = [];
+  const clean = String(text || '')
+    .replace(FILE_TAG, (_, p) => {
+      paths.push(resolve(cwd, p.trim().replace(/^["'`]+|["'`]+$/g, '')));
+      return '';
+    })
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  return { text: clean, paths: [...new Set(paths)] };
+}
+
+// Ne plante jamais : un fichier refusé est signalé dans le salon.
+async function sendFiles(channelId, paths) {
+  const errors = [];
+  const form = new FormData();
+  const attachments = [];
+  for (const p of paths) {
+    try {
+      if (attachments.length >= MAX_FILES) throw new Error(`plus de ${MAX_FILES} fichiers`);
+      if (p.toLowerCase() === CONFIG_PATH.toLowerCase()) throw new Error('fichier protégé (token du bot)');
+      const st = statSync(p);
+      if (!st.isFile()) throw new Error('ce n\'est pas un fichier');
+      if (st.size > MAX_FILE_BYTES) throw new Error(`trop lourd (${(st.size / 1048576).toFixed(1)} Mo, max 10 Mo)`);
+      const id = attachments.length;
+      form.append(`files[${id}]`, new Blob([readFileSync(p)]), basename(p));
+      attachments.push({ id, filename: basename(p) });
+    } catch (e) {
+      errors.push(`\`${p}\` : ${e.code === 'ENOENT' ? 'introuvable' : e.message}`);
+    }
+  }
+
+  if (attachments.length) {
+    form.append('payload_json', JSON.stringify({ attachments, allowed_mentions: { parse: [] } }));
+    try {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const res = await fetch(`${API}/channels/${channelId}/messages`, {
+          method: 'POST',
+          headers: { Authorization: `Bot ${config.discordToken}` },
+          body: form,
+        });
+        if (res.status === 429) {
+          const { retry_after = 1 } = await res.json().catch(() => ({}));
+          await sleep(retry_after * 1000 + 100);
+          continue;
+        }
+        if (!res.ok) errors.push(`envoi refusé par Discord (${res.status}) : ${(await res.text()).slice(0, 300)}`);
+        break;
+      }
+    } catch (e) {
+      errors.push(`envoi impossible : ${e.message}`);
+    }
+  }
+
+  if (errors.length) await send(channelId, `⚠️ Fichier(s) non envoyé(s) :\n${errors.join('\n')}`);
 }
 
 // Nom de salon Discord : minuscules, tirets, 100 caractères max.
@@ -265,16 +334,25 @@ async function runClaude(conv, prompt, run) {
   if (conv.sessionId) args.push('--resume', conv.sessionId);
   if (config.model) args.push('--model', config.model);
   if (config.effort) args.push('--effort', config.effort);
-  if (config.appendSystemPrompt) args.push('--append-system-prompt', config.appendSystemPrompt);
+  args.push('--append-system-prompt', [FILE_HINT, config.appendSystemPrompt].filter(Boolean).join('\n\n'));
 
   const r = await spawnClaude(args, prompt, conv.workdir, run);
   if (r.cancelled) return { ok: false, text: '🛑 Requête annulée.' };
   if (r.error) return { ok: false, text: r.error };
 
   const json = r.json;
-  if (json.session_id) {
+  // Une requête en échec (connexion expirée…) ne doit pas faire perdre le fil de la conversation.
+  if (json.session_id && !json.is_error) {
     conv.sessionId = json.session_id;
     saveState();
+  }
+  if (json.is_error && /authenticat|oauth|log ?in/i.test(json.result || '')) {
+    return {
+      ok: false,
+      text: '🔑 Claude Code n\'est plus connecté à ton compte (connexion expirée).\n' +
+        'Sur le PC, ouvre un terminal, tape `claude`, puis `/login` et suis les étapes. Renvoie ensuite ta demande ici.\n' +
+        `-# ${json.result}`,
+    };
   }
   const text = json.result || (json.is_error ? `Erreur : ${json.subtype}` : '');
   return { ok: !json.is_error, text, cost: json.total_cost_usd, tokens: tokensLine(json) };
@@ -623,7 +701,9 @@ async function handleMessage(msg) {
     clearInterval(typing);
     const seconds = Math.round((Date.now() - run.startedAt) / 1000);
 
-    await sendLong(here, result.text);
+    const reply = extractFiles(result.text, conv.workdir);
+    if (reply.text) await sendLong(here, reply.text);
+    if (reply.paths.length) await sendFiles(here, reply.paths).catch((e) => console.error('Fichiers :', e.message));
     const meta = [`${seconds} s`];
     if (config.showCost && result.cost != null) meta.push(`${result.cost.toFixed(3)} $`);
     const usage = config.showUsage === false ? [] : [result.tokens, limitsLine()].filter(Boolean);
@@ -790,4 +870,4 @@ function connect() {
 // Lancé directement (start.bat) : on se connecte. Importé (tests) : on expose les outils.
 const isMain = process.argv[1] && resolve(process.argv[1]).toLowerCase() === fileURLToPath(import.meta.url).toLowerCase();
 if (isMain) connect();
-export { spawnClaude, runClaude, tokensLine, limitsLine };
+export { spawnClaude, runClaude, tokensLine, limitsLine, extractFiles, sendFiles };
